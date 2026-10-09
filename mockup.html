@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kage — Mockup</title>
+<style>
+  :root{
+    --bg:#0b0d10;
+    --panel:#13161b;
+    --panel-2:#181c22;
+    --border:#242933;
+    --text:#eef1f5;
+    --text-dim:#9aa3b2;
+    --accent:#6ea8ff;
+    --accent-soft:rgba(110,168,255,0.12);
+    --danger:#ff6e6e;
+    --ok:#4fd6a8;
+    --radius:22px;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(110,168,255,0.08), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(79,214,168,0.06), transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:"SF Pro Display","Segoe UI",system-ui,-apple-system,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{
+    display:flex;
+    flex-wrap:wrap;
+    gap:56px;
+    justify-content:center;
+    align-items:flex-start;
+    padding:64px 32px;
+  }
+  .caption{
+    text-align:center;
+    margin-bottom:18px;
+  }
+  .caption h2{
+    margin:0 0 4px;
+    font-size:15px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    color:var(--text);
+  }
+  .caption span{
+    font-size:12.5px;
+    color:var(--text-dim);
+  }
+  .phone{
+    width:340px;
+    height:712px;
+    background:linear-gradient(160deg,#17191e,#0e1013);
+    border-radius:46px;
+    padding:14px;
+    box-shadow:
+      0 40px 80px -20px rgba(0,0,0,0.65),
+      0 0 0 1px rgba(255,255,255,0.04) inset;
+    position:relative;
+  }
+  .screen{
+    width:100%;
+    height:100%;
+    background:var(--bg);
+    border-radius:34px;
+    overflow:hidden;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+  }
+  .notch{
+    position:absolute;
+    top:10px;
+    left:50%;
+    transform:translateX(-50%);
+    width:90px;
+    height:22px;
+    background:#0e1013;
+    border-radius:14px;
+    z-index:5;
+  }
+  .statusbar{
+    height:46px;
+    flex:0 0 auto;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    padding:0 24px 8px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--text);
+  }
+  .topbar{
+    padding:6px 22px 18px;
+    flex:0 0 auto;
+  }
+  .topbar .eyebrow{
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--accent);
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  .topbar h1{
+    font-size:24px;
+    margin:0;
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  .content{
+    flex:1;
+    overflow-y:auto;
+    padding:0 22px 22px;
+  }
+  /* ---- form screen ---- */
+  .field{
+    margin-bottom:16px;
+  }
+  .field label{
+    display:block;
+    font-size:12px;
+    color:var(--text-dim);
+    margin-bottom:7px;
+    font-weight:600;
+    letter-spacing:0.02em;
+  }
+  .field .input{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:13px 15px;
+    font-size:15px;
+    color:var(--text);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .field .input.placeholder{
+    color:var(--text-dim);
+  }
+  .row2{
+    display:flex;
+    gap:12px;
+  }
+  .row2 .field{flex:1;}
+  .icon{
+    width:17px;height:17px;
+    opacity:0.55;
+  }
+  .alert-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:14px 16px;
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .alert-card .meta{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  .alert-card .meta .tag{
+    font-size:11px;
+    color:var(--accent);
+    font-weight:700;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+  }
+  .alert-card .meta .when{
+    font-size:14px;
+    color:var(--text);
+    font-weight:600;
+  }
+  .alert-card .remove{
+    width:26px;height:26px;
+    border-radius:50%;
+    background:rgba(255,110,110,0.1);
+    color:var(--danger);
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;
+    font-weight:700;
+  }
+  .add-alert{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:13px 15px;
+    border:1.5px dashed var(--border);
+    border-radius:14px;
+    color:var(--accent);
+    font-size:14px;
+    font-weight:600;
+    margin-top:4px;
+  }
+  .add-alert .plus{
+    width:22px;height:22px;
+    border-radius:50%;
+    background:var(--accent-soft);
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;
+    font-weight:700;
+    line-height:1;
+  }
+  .spacer{flex:1;}
+  .footer{
+    padding:14px 22px 24px;
+    flex:0 0 auto;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,#6ea8ff,#4f7fe0);
+    color:#fff;
+    text-align:center;
+    padding:16px;
+    border-radius:16px;
+    font-weight:700;
+    font-size:15.5px;
+    letter-spacing:0.01em;
+    box-shadow:0 12px 24px -8px rgba(110,168,255,0.45);
+  }
+  .home-indicator{
+    width:120px;
+    height:4px;
+    background:rgba(255,255,255,0.25);
+    border-radius:4px;
+    margin:10px auto 0;
+  }
+  /* ---- upcoming list screen ---- */
+  .tabbar{
+    display:flex;
+    gap:8px;
+    margin:0 22px 14px;
+    background:var(--panel);
+    border-radius:14px;
+    padding:4px;
+  }
+  .tabbar .tab{
+    flex:1;
+    text-align:center;
+    padding:9px 0;
+    font-size:13px;
+    font-weight:600;
+    color:var(--text-dim);
+    border-radius:11px;
+  }
+  .tabbar .tab.active{
+    background:var(--accent-soft);
+    color:var(--accent);
+  }
+  .day-group{
+    margin-bottom:18px;
+  }
+  .day-group .day-label{
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    margin:0 2px 10px;
+  }
+  .reminder-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:15px 16px;
+    margin-bottom:10px;
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
+  }
+  .reminder-card .time-chip{
+    background:var(--panel-2);
+    border-radius:12px;
+    padding:8px 10px;
+    text-align:center;
+    min-width:52px;
+  }
+  .reminder-card .time-chip .hh{
+    font-size:15px;
+    font-weight:700;
+    color:var(--text);
+  }
+  .reminder-card .time-chip .mer{
+    font-size:9.5px;
+    color:var(--text-dim);
+    font-weight:700;
+    letter-spacing:0.05em;
+  }
+  .reminder-card .body{
+    flex:1;
+  }
+  .reminder-card .title{
+    font-size:15px;
+    font-weight:650;
+    color:var(--text);
+    margin-bottom:6px;
+  }
+  .reminder-card .alerts{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .reminder-card .alerts .pill{
+    font-size:10.5px;
+    font-weight:600;
+    color:var(--accent);
+    background:var(--accent-soft);
+    padding:4px 9px;
+    border-radius:20px;
+  }
+  .reminder-card .chevron{
+    color:var(--text-dim);
+    font-size:16px;
+    padding-top:2px;
+  }
+  .fab{
+    position:absolute;
+    right:22px;
+    bottom:92px;
+    width:54px;height:54px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#6ea8ff,#4f7fe0);
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;
+    font-weight:600;
+    color:#fff;
+    box-shadow:0 14px 28px -8px rgba(110,168,255,0.55);
+  }
+  .telegram-strip{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:12px 14px;
+    margin:0 0 18px;
+  }
+  .telegram-strip .dot{
+    width:8px;height:8px;
+    border-radius:50%;
+    background:var(--ok);
+    box-shadow:0 0 0 4px rgba(79,214,168,0.15);
+  }
+  .telegram-strip .txt{
+    font-size:12px;
+    color:var(--text-dim);
+  }
+  .telegram-strip .txt b{
+    color:var(--text);
+    font-weight:650;
+  }
+  footer.credit{
+    width:100%;
+    text-align:center;
+    margin-top:12px;
+    font-size:12px;
+    color:var(--text-dim);
+  }
+  .btn-danger{
+    background:rgba(255,110,110,0.1);
+    color:var(--danger);
+    text-align:center;
+    padding:15px;
+    border-radius:16px;
+    font-weight:650;
+    font-size:14.5px;
+    margin-top:10px;
+    border:1px solid rgba(255,110,110,0.25);
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div>
+    <div class="caption">
+      <h2>Nuevo recordatorio</h2>
+      <span>Formulario estructurado — sin IA, sin texto libre</span>
+    </div>
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="statusbar"><span>21:47</span><span>●●●●  📶  🔋</span></div>
+        <div class="topbar">
+          <h1>Nuevo recordatorio</h1>
+        </div>
+        <div class="content">
+          <div class="field">
+            <label>Título</label>
+            <div class="input">Peluquería</div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>Fecha</label>
+              <div class="input">Vie, 10 oct</div>
+            </div>
+            <div class="field">
+              <label>Hora</label>
+              <div class="input">17:00</div>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:22px;">
+            <label>Alertas</label>
+            <div class="alert-card">
+              <div class="meta">
+                <span class="tag">Día antes</span>
+                <span class="when">Jue, 9 oct · 15:00</span>
+              </div>
+              <div class="remove">✕</div>
+            </div>
+            <div class="alert-card">
+              <div class="meta">
+                <span class="tag">Mismo día</span>
+                <span class="when">Vie, 10 oct · 10:00</span>
+              </div>
+              <div class="remove">✕</div>
+            </div>
+            <div class="add-alert">
+              <span class="plus">+</span>
+              Añadir otra alerta
+            </div>
+          </div>
+        </div>
+        <div class="footer">
+          <div class="btn-primary">Guardar recordatorio</div>
+          <div class="home-indicator"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="caption">
+      <h2>Próximos</h2>
+      <span>Lista cronológica — entrega solo por Telegram</span>
+    </div>
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="statusbar"><span>21:47</span><span>●●●●  📶  🔋</span></div>
+        <div class="topbar">
+          <h1>Próximos</h1>
+        </div>
+        <div class="content">
+          <div class="tabbar">
+            <div class="tab active">Próximos</div>
+            <div class="tab">Pasados</div>
+          </div>
+
+          <div class="telegram-strip">
+            <div class="dot"></div>
+            <div class="txt">Bot conectado como <b>@kage_recordatorios_bot</b></div>
+          </div>
+
+          <div class="day-group">
+            <div class="day-label">Hoy · 7 oct</div>
+            <div class="reminder-card">
+              <div class="time-chip"><div class="hh">10:00</div><div class="mer">AM</div></div>
+              <div class="body">
+                <div class="title">Llamar al seguro del coche</div>
+                <div class="alerts"><span class="pill">Hora exacta</span></div>
+              </div>
+              <div class="chevron">✎</div>
+            </div>
+          </div>
+
+          <div class="day-group">
+            <div class="day-label">Jueves · 9 oct</div>
+            <div class="reminder-card">
+              <div class="time-chip"><div class="hh">15:00</div><div class="mer">PM</div></div>
+              <div class="body">
+                <div class="title">Peluquería (día antes)</div>
+                <div class="alerts"><span class="pill">Alerta 1 de 2</span></div>
+              </div>
+              <div class="chevron">✎</div>
+            </div>
+          </div>
+
+          <div class="day-group">
+            <div class="day-label">Viernes · 10 oct</div>
+            <div class="reminder-card">
+              <div class="time-chip"><div class="hh">10:00</div><div class="mer">AM</div></div>
+              <div class="body">
+                <div class="title">Peluquería (mismo día)</div>
+                <div class="alerts"><span class="pill">Alerta 2 de 2</span></div>
+              </div>
+              <div class="chevron">✎</div>
+            </div>
+            <div class="reminder-card">
+              <div class="time-chip"><div class="hh">05:00</div><div class="mer">PM</div></div>
+              <div class="body">
+                <div class="title">Peluquería</div>
+                <div class="alerts"><span class="pill">Hora del evento</span></div>
+              </div>
+              <div class="chevron">✎</div>
+            </div>
+          </div>
+        </div>
+        <div class="fab">+</div>
+        <div class="footer" style="padding-top:0;">
+          <div class="home-indicator"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="caption">
+      <h2>Editar recordatorio</h2>
+      <span>Mismo formulario, precargado — editable y eliminable en cualquier momento</span>
+    </div>
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="statusbar"><span>21:47</span><span>●●●●  📶  🔋</span></div>
+        <div class="topbar">
+          <h1>Editar recordatorio</h1>
+        </div>
+        <div class="content">
+          <div class="field">
+            <label>Título</label>
+            <div class="input">Peluquería</div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>Fecha</label>
+              <div class="input">Vie, 10 oct</div>
+            </div>
+            <div class="field">
+              <label>Hora</label>
+              <div class="input">17:00</div>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:22px;">
+            <label>Alertas</label>
+            <div class="alert-card">
+              <div class="meta">
+                <span class="tag">Día antes</span>
+                <span class="when">Jue, 9 oct · 15:00</span>
+              </div>
+              <div class="remove">✕</div>
+            </div>
+            <div class="alert-card">
+              <div class="meta">
+                <span class="tag">Mismo día</span>
+                <span class="when">Vie, 10 oct · 10:00</span>
+              </div>
+              <div class="remove">✕</div>
+            </div>
+            <div class="add-alert">
+              <span class="plus">+</span>
+              Añadir otra alerta
+            </div>
+          </div>
+        </div>
+        <div class="footer">
+          <div class="btn-primary">Guardar cambios</div>
+          <div class="btn-danger">Eliminar recordatorio</div>
+          <div class="home-indicator"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<footer class="credit">Mockup conceptual, basado en la nota del vault · no es la app real todavía</footer>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Recordatorios</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<main id="view-calendar" class="view">
+  <header class="bar"><h1>CALENDARIO</h1></header>
+  <div class="cal-header">
+    <button id="cal-prev" class="btn-icon" aria-label="Mes anterior">←</button>
+    <button id="cal-month-label" class="cal-month-label">—</button>
+    <button id="cal-next" class="btn-icon" aria-label="Mes siguiente">→</button>
+  </div>
+  <button id="cal-today-btn" class="cal-today-btn hidden">HOY</button>
+  <div class="cal-weekdays">
+    <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+  </div>
+  <div id="cal-grid" class="cal-grid"></div>
+  <div id="cal-month-list" class="cal-month-list"></div>
+</main>
+
+<main id="view-list" class="view hidden">
+  <header class="bar bar-with-action">
+    <h1>RECORDATORIOS</h1>
+    <button id="btn-toggle-archived" class="btn-icon-toggle hidden" aria-label="Mostrar archivados">📁</button>
+  </header>
+  <div class="subtabbar">
+    <button id="subtab-upcoming" class="subtab-btn active">PRÓXIMOS</button>
+    <button id="subtab-past" class="subtab-btn">PASADOS</button>
+  </div>
+  <section id="list-content" class="list-content"></section>
+</main>
+
+<main id="view-form" class="view hidden">
+  <header class="bar">
+    <button id="btn-back" class="btn-icon" aria-label="Volver">←</button>
+    <h1 id="form-title">NUEVO</h1>
+  </header>
+  <section class="form-content">
+    <label class="field-label" for="input-title">TÍTULO</label>
+    <input id="input-title" class="field-input" type="text" placeholder="Peluquería">
+
+    <div class="row2">
+      <div class="col">
+        <label class="field-label" for="input-date">FECHA</label>
+        <input id="input-date" class="field-input" type="date">
+      </div>
+      <div class="col">
+        <label class="field-label" for="input-time">HORA</label>
+        <input id="input-time" class="field-input" type="time">
+      </div>
+    </div>
+
+    <label class="field-label">ALERTAS</label>
+    <div id="alerts-list"></div>
+    <button id="btn-add-alert" class="btn-dashed" type="button">+ AÑADIR ALERTA</button>
+  </section>
+  <footer class="form-footer">
+    <button id="btn-save" class="btn-primary" type="button">GUARDAR</button>
+    <button id="btn-delete" class="btn-danger hidden" type="button">ELIMINAR RECORDATORIO</button>
+  </footer>
+</main>
+
+<nav id="bottom-nav" class="bottom-nav">
+  <button id="tab-calendar" class="tab-btn active">CALENDARIO</button>
+  <button id="btn-new" class="fab-center" aria-label="Nuevo recordatorio">+</button>
+  <button id="tab-list" class="tab-btn">RECORDATORIOS</button>
+</nav>
+
+<div id="day-sheet-backdrop" class="sheet-backdrop hidden"></div>
+<div id="day-sheet" class="day-sheet hidden">
+  <div class="day-sheet-header">
+    <div id="day-sheet-title" class="day-sheet-title">—</div>
+    <button id="day-sheet-close" class="btn-icon" aria-label="Cerrar">✕</button>
+  </div>
+  <div id="day-sheet-list" class="day-sheet-list"></div>
+</div>
+
+<div id="month-sheet-backdrop" class="sheet-backdrop hidden"></div>
+<div id="month-sheet" class="day-sheet hidden">
+  <div class="day-sheet-header">
+    <div class="year-nav">
+      <button id="msheet-prev-year" class="btn-icon" aria-label="Año anterior">←</button>
+      <div id="msheet-year-label" class="cal-month-label">—</div>
+      <button id="msheet-next-year" class="btn-icon" aria-label="Año siguiente">→</button>
+    </div>
+    <button id="month-sheet-close" class="btn-icon" aria-label="Cerrar">✕</button>
+  </div>
+  <div id="msheet-grid" class="msheet-grid"></div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<template id="alert-row-template">
+  <div class="alert-row">
+    <div class="alert-auto-label">—</div>
+    <input class="alert-date" type="date">
+    <input class="alert-time" type="time">
+    <button class="alert-remove" type="button" aria-label="Quitar alerta">✕</button>
+  </div>
+</template>
+
+<script src="app.js"></script>
+</body>
+</html>
