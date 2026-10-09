@@ -4,7 +4,7 @@ services:
     container_name: kage
     restart: unless-stopped
     ports:
-      - "4477:4477"
+      - "1106:4477"
     env_file:
       - ./backend/.env
     volumes:
