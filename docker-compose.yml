@@ -1,6 +1,6 @@
 services:
   kage:
-    build: .
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-amoszp}/kage:${KAGE_TAG:-latest}
     container_name: kage
     restart: unless-stopped
     ports:
