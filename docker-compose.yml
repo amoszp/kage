@@ -9,5 +9,4 @@ services:
       - ./backend/.env
     volumes:
       # Host-side folder that keeps the SQLite database across rebuilds/restarts.
-      # Point this at wherever this NAS's apps usually keep persistent data.
       - ./data:/app/backend/data
