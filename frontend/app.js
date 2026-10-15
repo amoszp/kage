@@ -358,7 +358,7 @@ async function handleSignup(event) {
   if (!/^[a-z0-9][a-z0-9._-]{1,31}$/.test(username)) {
     return showSignupError("USUARIO: 2 A 32 CARACTERES, MINÚSCULAS, NÚMEROS, PUNTO, GUION O GUION BAJO.");
   }
-  if (signupPassword.value.length < 8) return showSignupError("LA CONTRASEÑA NECESITA AL MENOS 8 CARACTERES.");
+  if (signupPassword.value.length < 4) return showSignupError("LA CONTRASEÑA NECESITA AL MENOS 4 CARACTERES.");
   if (signupPassword.value !== signupPassword2.value) return showSignupError("LAS CONTRASEÑAS NO COINCIDEN.");
 
   btnSignup.disabled = true;
