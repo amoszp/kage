@@ -22,6 +22,11 @@ const reminderColumns = db.prepare("PRAGMA table_info(reminders)").all() as { na
 if (!reminderColumns.some((c) => c.name === "completed_at")) {
   db.exec("ALTER TABLE reminders ADD COLUMN completed_at TEXT");
 }
+// Owner (an id from the accounts service). Reminders from before accounts have
+// none until claimUnownedReminders() gives them to their original user.
+if (!reminderColumns.some((c) => c.name === "user_id")) {
+  db.exec("ALTER TABLE reminders ADD COLUMN user_id INTEGER");
+}
 db.exec(`
   CREATE TABLE IF NOT EXISTS alerts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,6 +59,7 @@ function alertsForReminder(reminderId: number): AlertRecord[] {
 function rowToReminder(row: any): ReminderRecord {
   return {
     id: row.id,
+    userId: row.user_id ?? null,
     title: row.title,
     date: row.date,
     time: row.time,
@@ -63,9 +69,13 @@ function rowToReminder(row: any): ReminderRecord {
   };
 }
 
-export function listReminders(): ReminderRecord[] {
-  const rows = db.prepare("SELECT * FROM reminders ORDER BY date ASC, time ASC").all();
+export function listReminders(userId: number): ReminderRecord[] {
+  const rows = db.prepare("SELECT * FROM reminders WHERE user_id = ? ORDER BY date ASC, time ASC").all(userId);
   return rows.map(rowToReminder);
+}
+
+export function claimUnownedReminders(userId: number): number {
+  return Number(db.prepare("UPDATE reminders SET user_id = ? WHERE user_id IS NULL").run(userId).changes);
 }
 
 export function getReminder(id: number): ReminderRecord | null {
@@ -82,11 +92,11 @@ function insertAlerts(reminderId: number, alerts: AlertInput[]): void {
   }
 }
 
-export function createReminder(input: ReminderInput): ReminderRecord {
+export function createReminder(input: ReminderInput, userId: number): ReminderRecord {
   const createdAt = new Date().toISOString();
   const result = db
-    .prepare("INSERT INTO reminders (title, date, time, created_at) VALUES (?, ?, ?, ?)")
-    .run(input.title, input.date, input.time, createdAt);
+    .prepare("INSERT INTO reminders (title, date, time, created_at, user_id) VALUES (?, ?, ?, ?, ?)")
+    .run(input.title, input.date, input.time, createdAt, userId);
   const reminderId = Number(result.lastInsertRowid);
   insertAlerts(reminderId, input.alerts);
   return getReminder(reminderId)!;
@@ -127,10 +137,10 @@ export function setReminderCompleted(id: number, completed: boolean): ReminderRe
 
 export function listDueAlerts(
   nowIso: string
-): (AlertRecord & { reminderTitle: string; reminderDate: string; reminderTime: string })[] {
+): (AlertRecord & { reminderTitle: string; reminderDate: string; reminderTime: string; reminderUserId: number | null })[] {
   const rows = db
     .prepare(
-      `SELECT alerts.*, reminders.title AS reminder_title, reminders.date AS reminder_date, reminders.time AS reminder_time
+      `SELECT alerts.*, reminders.title AS reminder_title, reminders.date AS reminder_date, reminders.time AS reminder_time, reminders.user_id AS reminder_user_id
        FROM alerts
        JOIN reminders ON reminders.id = alerts.reminder_id
        WHERE alerts.sent = 0 AND alerts.fire_at <= ? AND reminders.completed_at IS NULL`
@@ -141,6 +151,7 @@ export function listDueAlerts(
     reminderTitle: row.reminder_title,
     reminderDate: row.reminder_date,
     reminderTime: row.reminder_time,
+    reminderUserId: row.reminder_user_id ?? null,
   }));
 }
 

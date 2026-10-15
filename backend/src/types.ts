@@ -19,6 +19,7 @@ export interface ReminderInput {
 
 export interface ReminderRecord {
   id: number;
+  userId: number | null;
   title: string;
   date: string;
   time: string;

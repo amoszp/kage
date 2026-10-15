@@ -13,8 +13,44 @@
 </head>
 <body>
 
+<main id="view-login" class="view hidden">
+  <header class="bar"><h1>ENTRAR</h1></header>
+  <form id="login-form" class="form-content" autocomplete="on">
+    <label class="field-label" for="login-username">USUARIO</label>
+    <input id="login-username" class="field-input" type="text" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+    <label class="field-label" for="login-password">CONTRASEÑA</label>
+    <input id="login-password" class="field-input" type="password" name="password" autocomplete="current-password" required>
+    <p id="login-error" class="login-error hidden"></p>
+    <button id="btn-login" class="btn-primary" type="submit">ENTRAR</button>
+    <button id="btn-show-signup" class="btn-link" type="button">¿NO TIENES CUENTA? CREAR UNA</button>
+  </form>
+</main>
+
+<main id="view-signup" class="view hidden">
+  <header class="bar"><h1>CREAR CUENTA</h1></header>
+  <form id="signup-form" class="form-content" autocomplete="on">
+    <label class="field-label" for="signup-name">NOMBRE</label>
+    <input id="signup-name" class="field-input" type="text" name="name" autocomplete="name" maxlength="40" required>
+    <label class="field-label" for="signup-username">USUARIO</label>
+    <input id="signup-username" class="field-input" type="text" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="32" required>
+    <p class="field-hint">MINÚSCULAS, NÚMEROS, PUNTO, GUION O GUION BAJO.</p>
+    <label class="field-label" for="signup-password">CONTRASEÑA</label>
+    <input id="signup-password" class="field-input" type="password" name="new-password" autocomplete="new-password" minlength="8" required>
+    <label class="field-label" for="signup-password2">REPITE LA CONTRASEÑA</label>
+    <input id="signup-password2" class="field-input" type="password" name="new-password2" autocomplete="new-password" minlength="8" required>
+    <p id="signup-error" class="login-error hidden"></p>
+    <button id="btn-signup" class="btn-primary" type="submit">CREAR CUENTA</button>
+    <button id="btn-show-login" class="btn-link" type="button">YA TENGO CUENTA</button>
+  </form>
+</main>
+
+<div id="viewing-banner" class="viewing-banner hidden"></div>
+
 <main id="view-calendar" class="view">
-  <header class="bar"><h1>CALENDARIO</h1></header>
+  <header class="bar bar-with-action">
+    <h1>CALENDARIO</h1>
+    <button id="btn-account" class="btn-icon-toggle" aria-label="Cuenta">👤</button>
+  </header>
   <div class="cal-header">
     <button id="cal-prev" class="btn-icon" aria-label="Mes anterior">←</button>
     <button id="cal-month-label" class="cal-month-label">—</button>
@@ -97,6 +133,21 @@
     <button id="month-sheet-close" class="btn-icon" aria-label="Cerrar">✕</button>
   </div>
   <div id="msheet-grid" class="msheet-grid"></div>
+</div>
+
+<div id="account-sheet-backdrop" class="sheet-backdrop hidden"></div>
+<div id="account-sheet" class="day-sheet hidden">
+  <div class="day-sheet-header">
+    <div id="account-sheet-title" class="day-sheet-title">—</div>
+    <button id="account-sheet-close" class="btn-icon" aria-label="Cerrar">✕</button>
+  </div>
+  <div class="day-sheet-list">
+    <div id="account-users" class="hidden">
+      <div class="section-label">VER RECORDATORIOS DE</div>
+      <div id="account-users-list"></div>
+    </div>
+    <button id="btn-logout" class="btn-danger" type="button">CERRAR SESIÓN</button>
+  </div>
 </div>
 
 <div id="toast" class="toast hidden"></div>

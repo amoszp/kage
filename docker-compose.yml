@@ -10,3 +10,11 @@ services:
     volumes:
       # Host-side folder that keeps the SQLite database across rebuilds/restarts.
       - ./data:/app/backend/data
+    networks:
+      - default
+      - accounts
+
+networks:
+  accounts:
+    # Created by the accounts service's compose file.
+    external: true

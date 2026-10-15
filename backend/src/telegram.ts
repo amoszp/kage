@@ -1,8 +1,7 @@
 const TELEGRAM_API = "https://api.telegram.org";
 
-export async function sendTelegramMessage(text: string): Promise<void> {
+export async function sendTelegramMessage(text: string, chatId: string): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
 
   if (!token || !chatId) {
     console.warn("[telegram] TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set — skipping send:", text);

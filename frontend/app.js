@@ -1,10 +1,35 @@
 const API = "/api/reminders";
+const AUTH_API = "/api/auth";
 const ARCHIVE_THRESHOLD_MONTHS = 3;
 const MONTH_ABBR = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
 
 const viewCalendar = document.getElementById("view-calendar");
 const viewList = document.getElementById("view-list");
 const viewForm = document.getElementById("view-form");
+const viewLogin = document.getElementById("view-login");
+const loginForm = document.getElementById("login-form");
+const loginUsername = document.getElementById("login-username");
+const loginPassword = document.getElementById("login-password");
+const loginError = document.getElementById("login-error");
+const btnLogin = document.getElementById("btn-login");
+const viewingBanner = document.getElementById("viewing-banner");
+const viewSignup = document.getElementById("view-signup");
+const signupForm = document.getElementById("signup-form");
+const signupName = document.getElementById("signup-name");
+const signupUsername = document.getElementById("signup-username");
+const signupPassword = document.getElementById("signup-password");
+const signupPassword2 = document.getElementById("signup-password2");
+const signupError = document.getElementById("signup-error");
+const btnSignup = document.getElementById("btn-signup");
+
+const btnAccount = document.getElementById("btn-account");
+const accountSheetBackdrop = document.getElementById("account-sheet-backdrop");
+const accountSheet = document.getElementById("account-sheet");
+const accountSheetTitle = document.getElementById("account-sheet-title");
+const accountSheetClose = document.getElementById("account-sheet-close");
+const accountUsers = document.getElementById("account-users");
+const accountUsersList = document.getElementById("account-users-list");
+const btnLogout = document.getElementById("btn-logout");
 const listContent = document.getElementById("list-content");
 const formTitle = document.getElementById("form-title");
 const alertsList = document.getElementById("alerts-list");
@@ -59,6 +84,9 @@ let monthSheetYear = calendarCursor.getFullYear();
 let allReminders = [];
 let previousMainDateTime = null;
 let editingCompleted = false;
+let currentUser = null;
+let allUsers = []; // only filled for admins
+let viewingUserId = null; // admin browsing another user's reminders; null = own
 
 // ---------- helpers ----------
 
@@ -122,6 +150,8 @@ function formatDayLabel(dateStr) {
 // ---------- navigation ----------
 
 function hideAllViews() {
+  viewLogin.classList.add("hidden");
+  viewSignup.classList.add("hidden");
   viewCalendar.classList.add("hidden");
   viewList.classList.add("hidden");
   viewForm.classList.add("hidden");
@@ -239,13 +269,182 @@ function showForm(mode, reminder) {
   previousMainDateTime = getMainDateTime();
 }
 
+// ---------- session ----------
+
+class LoginRequired extends Error {}
+
+// Every API call goes through here: a 401 means the session ended, so the
+// login screen takes over.
+async function apiFetch(url, options = {}) {
+  const res = await fetch(url, { credentials: "same-origin", ...options });
+  if (res.status === 401) {
+    showLogin();
+    throw new LoginRequired();
+  }
+  return res;
+}
+
+function showLogin() {
+  hideAllViews();
+  closeDaySheet();
+  closeAccountSheet();
+  currentUser = null;
+  allUsers = [];
+  viewingUserId = null;
+  allReminders = [];
+  updateViewingBanner();
+  bottomNav.classList.add("hidden");
+  viewLogin.classList.remove("hidden");
+  loginPassword.value = "";
+  loginError.classList.add("hidden");
+}
+
+async function loadSession() {
+  const res = await apiFetch(`${AUTH_API}/me`);
+  if (!res.ok) throw new Error(`session check failed (${res.status})`);
+  const data = await res.json();
+  currentUser = data.user;
+  allUsers = data.users;
+}
+
+async function handleLogin(event) {
+  event.preventDefault();
+  btnLogin.disabled = true;
+  loginError.classList.add("hidden");
+  try {
+    const res = await fetch(`${AUTH_API}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: loginUsername.value.trim(), password: loginPassword.value }),
+    });
+    if (!res.ok) {
+      loginError.textContent =
+        res.status === 429 ? "DEMASIADOS INTENTOS. PRUEBA EN UNOS MINUTOS."
+        : res.status === 401 ? "USUARIO O CONTRASEÑA INCORRECTOS."
+        : "NO SE PUDO ENTRAR. INTÉNTALO DE NUEVO.";
+      loginError.classList.remove("hidden");
+      return;
+    }
+    loginPassword.value = "";
+    await loadSession();
+    await loadReminders();
+    showCalendar();
+  } catch (err) {
+    if (!(err instanceof LoginRequired)) {
+      loginError.textContent = "SIN CONEXIÓN CON EL SERVIDOR.";
+      loginError.classList.remove("hidden");
+    }
+  } finally {
+    btnLogin.disabled = false;
+  }
+}
+
+function showSignup() {
+  hideAllViews();
+  viewSignup.classList.remove("hidden");
+  signupForm.reset();
+  signupError.classList.add("hidden");
+}
+
+function showSignupError(text) {
+  signupError.textContent = text;
+  signupError.classList.remove("hidden");
+}
+
+async function handleSignup(event) {
+  event.preventDefault();
+  signupError.classList.add("hidden");
+  const username = signupUsername.value.trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9._-]{1,31}$/.test(username)) {
+    return showSignupError("USUARIO: 2 A 32 CARACTERES, MINÚSCULAS, NÚMEROS, PUNTO, GUION O GUION BAJO.");
+  }
+  if (signupPassword.value.length < 8) return showSignupError("LA CONTRASEÑA NECESITA AL MENOS 8 CARACTERES.");
+  if (signupPassword.value !== signupPassword2.value) return showSignupError("LAS CONTRASEÑAS NO COINCIDEN.");
+
+  btnSignup.disabled = true;
+  try {
+    const res = await fetch(`${AUTH_API}/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password: signupPassword.value, displayName: signupName.value.trim() }),
+    });
+    if (res.status === 201) {
+      signupForm.reset();
+      await loadSession();
+      await loadReminders();
+      showCalendar();
+      showToast("CUENTA CREADA");
+      return;
+    }
+    showSignupError(
+      res.status === 409 ? "ESE USUARIO YA EXISTE. ELIGE OTRO."
+      : res.status === 429 ? "DEMASIADAS CUENTAS CREADAS. PRUEBA MÁS TARDE."
+      : "NO SE PUDO CREAR. REVISA LOS DATOS."
+    );
+  } catch (err) {
+    if (!(err instanceof LoginRequired)) showSignupError("SIN CONEXIÓN CON EL SERVIDOR.");
+  } finally {
+    btnSignup.disabled = false;
+  }
+}
+
+async function handleLogout() {
+  try {
+    await fetch(`${AUTH_API}/logout`, { method: "POST" });
+  } finally {
+    showLogin();
+  }
+}
+
+// ---------- account sheet (logout, admin user switch) ----------
+
+function openAccountSheet() {
+  accountSheetTitle.textContent = `SESIÓN: ${currentUser.displayName}`.toUpperCase();
+  accountUsersList.innerHTML = "";
+  accountUsers.classList.toggle("hidden", !currentUser.isAdmin || allUsers.length < 2);
+
+  for (const user of allUsers) {
+    const isSelected = (viewingUserId ?? currentUser.id) === user.id;
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = isSelected ? "day-sheet-item account-user selected" : "day-sheet-item account-user";
+    item.innerHTML = `<div class="title">${escapeHtml(user.displayName)}${user.id === currentUser.id ? " (TÚ)" : ""}</div>`;
+    item.addEventListener("click", () => switchViewedUser(user.id === currentUser.id ? null : user.id));
+    accountUsersList.appendChild(item);
+  }
+
+  accountSheetBackdrop.classList.remove("hidden");
+  accountSheet.classList.remove("hidden");
+}
+
+function closeAccountSheet() {
+  accountSheetBackdrop.classList.add("hidden");
+  accountSheet.classList.add("hidden");
+}
+
+async function switchViewedUser(userId) {
+  viewingUserId = userId;
+  closeAccountSheet();
+  updateViewingBanner();
+  await refreshEverything();
+}
+
+function updateViewingBanner() {
+  const viewed = viewingUserId && allUsers.find((u) => u.id === viewingUserId);
+  viewingBanner.classList.toggle("hidden", !viewed);
+  // New reminders are always created for yourself, so hide "+" while browsing someone else.
+  btnNew.classList.toggle("hidden", Boolean(viewed));
+  if (viewed) viewingBanner.textContent = `VIENDO: ${viewed.displayName.toUpperCase()} · TOCA PARA VOLVER`;
+}
+
 // ---------- data ----------
 
 async function loadReminders() {
   try {
-    const res = await fetch(API);
-    allReminders = await res.json();
+    const res = await apiFetch(viewingUserId ? `${API}?userId=${viewingUserId}` : API);
+    allReminders = res.ok ? await res.json() : [];
   } catch (err) {
+    if (err instanceof LoginRequired) throw err;
     allReminders = [];
   }
 }
@@ -570,7 +769,7 @@ async function saveReminder() {
   const url = editingId ? `${API}/${editingId}` : API;
   const method = editingId ? "PUT" : "POST";
 
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -586,7 +785,7 @@ async function saveReminder() {
 }
 
 async function setCompleted(id, completed) {
-  const res = await fetch(`${API}/${id}/${completed ? "complete" : "reopen"}`, { method: "POST" });
+  const res = await apiFetch(`${API}/${id}/${completed ? "complete" : "reopen"}`, { method: "POST" });
   if (!res.ok) {
     alert("No se pudo actualizar el recordatorio.");
     return false;
@@ -605,7 +804,7 @@ async function deleteReminder() {
   if (!editingId) return;
   if (!confirm("¿Eliminar este recordatorio y todas sus alertas?")) return;
 
-  const res = await fetch(`${API}/${editingId}`, { method: "DELETE" });
+  const res = await apiFetch(`${API}/${editingId}`, { method: "DELETE" });
   if (!res.ok && res.status !== 204) {
     alert("No se pudo eliminar el recordatorio.");
     return;
@@ -660,13 +859,36 @@ btnToggleArchived.addEventListener("click", () => {
   renderList();
 });
 
+loginForm.addEventListener("submit", handleLogin);
+signupForm.addEventListener("submit", handleSignup);
+document.getElementById("btn-show-signup").addEventListener("click", showSignup);
+document.getElementById("btn-show-login").addEventListener("click", showLogin);
+btnAccount.addEventListener("click", openAccountSheet);
+accountSheetClose.addEventListener("click", closeAccountSheet);
+accountSheetBackdrop.addEventListener("click", closeAccountSheet);
+btnLogout.addEventListener("click", handleLogout);
+viewingBanner.addEventListener("click", () => switchViewedUser(null));
+
 sheetBackdrop.addEventListener("click", closeDaySheet);
 daySheetClose.addEventListener("click", closeDaySheet);
 
 (async function init() {
-  await loadReminders();
-  showCalendar();
+  try {
+    await loadSession();
+    await loadReminders();
+    showCalendar();
+  } catch (err) {
+    if (!(err instanceof LoginRequired)) {
+      console.error(err);
+      showLogin();
+    }
+  }
 })();
+
+// A session that ends mid-action shows the login screen; nothing else to report.
+window.addEventListener("unhandledrejection", (event) => {
+  if (event.reason instanceof LoginRequired) event.preventDefault();
+});
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
