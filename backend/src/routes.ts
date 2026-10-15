@@ -32,7 +32,9 @@ const LEGACY_OWNER = (process.env.LEGACY_OWNER_USERNAME ?? "").trim().toLowerCas
 let legacyClaimed = !LEGACY_OWNER;
 
 function claimLegacy(user: User): void {
-  if (legacyClaimed || user.username !== LEGACY_OWNER) return;
+  // Admin only: sign-up never creates admins, so nobody can grab these
+  // reminders by registering the expected username first.
+  if (legacyClaimed || user.username !== LEGACY_OWNER || !user.isAdmin) return;
   const count = claimUnownedReminders(user.id);
   legacyClaimed = true;
   if (count > 0) console.log(`[auth] ${count} existing reminder(s) assigned to ${user.username}`);

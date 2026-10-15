@@ -34,7 +34,7 @@ Kage no guarda contraseñas: usa un servicio de cuentas aparte (proyecto `accoun
 
 - `ACCOUNTS_URL` y `ACCOUNTS_SERVICE_TOKEN` (el mismo `SERVICE_TOKEN` del servicio de cuentas) en `backend/.env`.
 - Los usuarios se crean desde la línea de comandos del servicio de cuentas. Para recibir avisos, cada usuario abre el bot de Telegram, pulsa Start y se guarda su chat: `node dist/cli.js user telegram <usuario> <chat id>`.
-- `LEGACY_OWNER_USERNAME`: los recordatorios creados antes de las cuentas pasan a este usuario en su primer inicio de sesión. `TELEGRAM_CHAT_ID` sigue siendo su chat si no tiene uno propio.
+- `LEGACY_OWNER_USERNAME`: los recordatorios creados antes de las cuentas pasan a este usuario en su primer inicio de sesión (solo si es administrador, para que nadie pueda quedárselos registrando ese nombre). `TELEGRAM_CHAT_ID` sigue siendo su chat si no tiene uno propio.
 
 ### API
 
