@@ -8,7 +8,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -49,7 +49,10 @@
 <main id="view-calendar" class="view">
   <header class="bar bar-with-action">
     <h1>CALENDARIO</h1>
-    <button id="btn-account" class="btn-icon-toggle" aria-label="Cuenta">👤</button>
+    <div class="bar-buttons">
+      <button id="btn-toggle-done" class="btn-icon-toggle" aria-label="Ocultar hechos">✓</button>
+      <button id="btn-account" class="btn-icon-toggle" aria-label="Cuenta">👤</button>
+    </div>
   </header>
   <div class="cal-header">
     <button id="cal-prev" class="btn-icon" aria-label="Mes anterior">←</button>

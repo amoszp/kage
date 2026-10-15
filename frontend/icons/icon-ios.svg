@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- iPhone home-screen icon. In Dark mode iOS darkens a web app's icon itself
+       (a web clip can't ship its own dark variant), which turned the yellow
+       ground black. This version is already dark: Kage's yellow lives in the
+       bell, so there's nothing light left for iOS to darken. -->
+  <defs>
+    <g id="bell">
+      <circle cx="512" cy="236" r="34"/>
+      <circle cx="512" cy="788" r="58"/>
+      <path d="M512 252 C628 252 664 342 668 452 C672 562 690 632 760 682 L760 702 L264 702 L264 682 C334 632 352 562 356 452 C360 342 396 252 512 252 Z"/>
+      <rect x="236" y="682" width="552" height="70" rx="30"/>
+    </g>
+  </defs>
+  <rect width="1024" height="1024" fill="#111111"/>
+  <g transform="translate(-22 -22)" stroke="#000" stroke-width="30" stroke-linejoin="round">
+    <use href="#bell" transform="translate(44 44)" fill="#3a3a3a"/>
+    <use href="#bell" fill="#ffde00"/>
+    <path d="M596 334 C624 372 634 424 636 478" fill="none" stroke-width="24" stroke-linecap="round"/>
+  </g>
+</svg>

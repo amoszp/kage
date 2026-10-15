@@ -23,6 +23,7 @@ const signupError = document.getElementById("signup-error");
 const btnSignup = document.getElementById("btn-signup");
 
 const btnAccount = document.getElementById("btn-account");
+const btnToggleDone = document.getElementById("btn-toggle-done");
 const accountSheetBackdrop = document.getElementById("account-sheet-backdrop");
 const accountSheet = document.getElementById("account-sheet");
 const accountSheetTitle = document.getElementById("account-sheet-title");
@@ -87,6 +88,14 @@ let editingCompleted = false;
 let currentUser = null;
 let allUsers = []; // only filled for admins
 let viewingUserId = null; // admin browsing another user's reminders; null = own
+
+// Calendar: show reminders marked as done (washed yellow) or hide them.
+// Remembered per device; storage can be unavailable (private mode).
+const SHOW_DONE_KEY = "kage-calendar-show-done";
+let showDoneInCalendar = true;
+try {
+  showDoneInCalendar = localStorage.getItem(SHOW_DONE_KEY) !== "0";
+} catch (err) {}
 
 // ---------- helpers ----------
 
@@ -533,6 +542,25 @@ function buildCard(reminder, dimmed = false, withCheck = false) {
 
 // ---------- calendar view ----------
 
+/** What the calendar (grid + month list) shows: done reminders only if wanted. */
+function calendarReminders() {
+  return showDoneInCalendar ? allReminders : allReminders.filter((r) => !isDone(r));
+}
+
+function updateDoneToggle() {
+  btnToggleDone.classList.toggle("active", showDoneInCalendar);
+  btnToggleDone.setAttribute("aria-label", showDoneInCalendar ? "Ocultar hechos" : "Mostrar hechos");
+}
+
+function toggleDoneInCalendar() {
+  showDoneInCalendar = !showDoneInCalendar;
+  try {
+    localStorage.setItem(SHOW_DONE_KEY, showDoneInCalendar ? "1" : "0");
+  } catch (err) {}
+  showToast(showDoneInCalendar ? "MOSTRANDO HECHOS" : "OCULTANDO HECHOS");
+  renderCalendar();
+}
+
 function renderCalendar() {
   const year = calendarCursor.getFullYear();
   const month = calendarCursor.getMonth();
@@ -545,8 +573,9 @@ function renderCalendar() {
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
   calTodayBtn.classList.toggle("hidden", isCurrentMonth);
 
+  updateDoneToggle();
   const remindersByDate = new Map();
-  for (const r of allReminders) {
+  for (const r of calendarReminders()) {
     if (!remindersByDate.has(r.date)) remindersByDate.set(r.date, []);
     remindersByDate.get(r.date).push(r);
   }
@@ -575,6 +604,8 @@ function renderCalendar() {
     const dayReminders = remindersByDate.get(dateStr);
     if (dayReminders && dayReminders.length > 0) {
       cell.classList.add("has-items");
+      // Every reminder that day is done: washed yellow instead of the full one.
+      if (dayReminders.every(isDone)) cell.classList.add("all-done");
       if (dayReminders.length > 1) {
         const badge = document.createElement("div");
         badge.className = "count-badge";
@@ -594,7 +625,7 @@ function renderCalendarMonthList(year, month) {
   const monthPrefix = `${year}-${String(month + 1).padStart(2, "0")}`;
   const today = todayStr();
 
-  const monthReminders = allReminders.filter((r) => r.date.startsWith(monthPrefix));
+  const monthReminders = calendarReminders().filter((r) => r.date.startsWith(monthPrefix));
   const upcoming = monthReminders
     .filter((r) => !isPast(r, today))
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
@@ -864,6 +895,7 @@ signupForm.addEventListener("submit", handleSignup);
 document.getElementById("btn-show-signup").addEventListener("click", showSignup);
 document.getElementById("btn-show-login").addEventListener("click", showLogin);
 btnAccount.addEventListener("click", openAccountSheet);
+btnToggleDone.addEventListener("click", toggleDoneInCalendar);
 accountSheetClose.addEventListener("click", closeAccountSheet);
 accountSheetBackdrop.addEventListener("click", closeAccountSheet);
 btnLogout.addEventListener("click", handleLogout);

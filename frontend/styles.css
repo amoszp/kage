@@ -289,6 +289,13 @@ body{
   box-shadow:0 0 0 var(--ink);
   transform:translate(3px,3px);
 }
+/* A day whose reminders are all done: washed yellow, quieter shadow. */
+.cal-cell.has-items.all-done{
+  background:#fbf1a9;
+  color:#6b6b6b;
+  border-color:#6b6b6b;
+  box-shadow:3px 3px 0 #6b6b6b;
+}
 .cal-cell.has-items.today{
   background:var(--ink);
   color:#fff;
@@ -471,6 +478,12 @@ body{
 
 .field-input{
   width:100%;
+  /* One fixed height for every box: iOS Safari draws date/time inputs with its
+     own native height, which made them taller than the text fields. */
+  height:54px;
+  -webkit-appearance:none;
+  appearance:none;
+  border-radius:0;
   border:var(--border) solid var(--ink);
   background:#fff;
   padding:13px 12px;
@@ -489,7 +502,22 @@ body{
   display:flex;
   gap:12px;
 }
-.row2 .col{flex:1;}
+.row2 .col{flex:1;min-width:0;}
+
+/* Date/time: same box as the text fields, value aligned left like them. */
+input.field-input[type="date"],
+input.field-input[type="time"],
+.alert-row input[type="date"],
+.alert-row input[type="time"]{
+  display:block;
+  min-width:0;
+  text-align:left;
+}
+.field-input::-webkit-date-and-time-value,
+.alert-row input::-webkit-date-and-time-value{
+  text-align:left;
+  margin:0;
+}
 
 #alerts-list{margin-bottom:12px;}
 
@@ -503,6 +531,12 @@ body{
   margin-bottom:10px;
 }
 .alert-row input{
+  height:36px;
+  -webkit-appearance:none;
+  appearance:none;
+  border-radius:0;
+  background:#fff;
+  color:var(--ink);
   border:2px solid var(--ink);
   padding:8px;
   font-size:12.5px;
@@ -684,4 +718,10 @@ body{
   letter-spacing:0.04em;
   text-decoration:underline;
   text-underline-offset:3px;
+}
+
+/* Calendar header: done toggle + account, side by side. */
+.bar-buttons{
+  display:flex;
+  gap:10px;
 }
