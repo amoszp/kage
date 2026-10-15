@@ -13,6 +13,7 @@
 - Crea un recordatorio con fecha, hora y una o varias alertas.
 - A la hora de cada alerta, un bot de Telegram envía el aviso al chat configurado.
 - Vista de calendario mensual y lista de próximos / pasados, con archivado.
+- Marca un recordatorio como hecho: pasa a pasados aunque su fecha no haya llegado y deja de enviar alertas. Se puede reabrir; las alertas que vencieron mientras estaba hecho se omiten.
 - PWA instalable: se añade a la pantalla de inicio y se abre como una app nativa.
 
 ## Desarrollo local

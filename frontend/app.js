@@ -19,6 +19,7 @@ const btnBack = document.getElementById("btn-back");
 const btnAddAlert = document.getElementById("btn-add-alert");
 const btnSave = document.getElementById("btn-save");
 const btnDelete = document.getElementById("btn-delete");
+const btnComplete = document.getElementById("btn-complete");
 
 const bottomNav = document.getElementById("bottom-nav");
 const tabCalendar = document.getElementById("tab-calendar");
@@ -57,6 +58,7 @@ let calendarCursor = new Date();
 let monthSheetYear = calendarCursor.getFullYear();
 let allReminders = [];
 let previousMainDateTime = null;
+let editingCompleted = false;
 
 // ---------- helpers ----------
 
@@ -86,6 +88,15 @@ function archiveThresholdStr() {
 
 function isArchived(reminder) {
   return reminder.date < archiveThresholdStr();
+}
+
+// A completed reminder counts as past even if its date is still ahead.
+function isDone(reminder) {
+  return Boolean(reminder.completedAt);
+}
+
+function isPast(reminder, today = todayStr()) {
+  return isDone(reminder) || reminder.date < today;
 }
 
 function escapeHtml(str) {
@@ -204,6 +215,9 @@ function showForm(mode, reminder) {
     editingId = reminder.id;
     formTitle.textContent = "EDITAR";
     btnDelete.classList.remove("hidden");
+    editingCompleted = isDone(reminder);
+    btnComplete.textContent = editingCompleted ? "REABRIR RECORDATORIO" : "✓ MARCAR COMO HECHO";
+    btnComplete.classList.remove("hidden");
     inputTitle.value = reminder.title;
     inputDate.value = reminder.date;
     inputTime.value = reminder.time;
@@ -215,6 +229,8 @@ function showForm(mode, reminder) {
     editingId = null;
     formTitle.textContent = "NUEVO";
     btnDelete.classList.add("hidden");
+    btnComplete.classList.add("hidden");
+    editingCompleted = false;
     inputTitle.value = "";
     inputDate.value = mode === "new" && reminder ? reminder.date : "";
     inputTime.value = "";
@@ -247,12 +263,12 @@ function renderList() {
   let items;
 
   if (listSubTab === "past") {
-    items = allReminders.filter((r) => r.date < today);
+    items = allReminders.filter((r) => isPast(r, today));
     if (!showArchived) items = items.filter((r) => !isArchived(r));
     items.sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
   } else {
     items = allReminders
-      .filter((r) => r.date >= today)
+      .filter((r) => !isPast(r, today))
       .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   }
 
@@ -277,19 +293,20 @@ function renderList() {
     listContent.appendChild(label);
 
     for (const reminder of dayItems) {
-      listContent.appendChild(buildCard(reminder));
+      listContent.appendChild(buildCard(reminder, false, listSubTab === "upcoming"));
     }
   }
 }
 
-function buildCard(reminder, dimmed = false) {
+function buildCard(reminder, dimmed = false, withCheck = false) {
   const card = document.createElement("div");
   card.className = dimmed ? "reminder-card dimmed" : "reminder-card";
   const { hh, mer } = formatCardTime(reminder.time);
 
-  const alertTags = reminder.alerts
-    .map((a) => `<span class="tag">${escapeHtml(a.label)}</span>`)
-    .join("");
+  const doneTag = isDone(reminder) ? '<span class="tag tag-done">✓ HECHO</span>' : "";
+  const alertTags =
+    doneTag +
+    reminder.alerts.map((a) => `<span class="tag">${escapeHtml(a.label)}</span>`).join("");
 
   card.innerHTML = `
     <div class="time">${hh}<small>${mer}</small></div>
@@ -299,6 +316,19 @@ function buildCard(reminder, dimmed = false) {
     </div>
   `;
   card.addEventListener("click", () => showForm("edit", reminder));
+
+  if (withCheck) {
+    const check = document.createElement("button");
+    check.className = "card-check";
+    check.type = "button";
+    check.textContent = "✓";
+    check.setAttribute("aria-label", "Marcar como hecho");
+    check.addEventListener("click", (event) => {
+      event.stopPropagation();
+      setCompleted(reminder.id, true);
+    });
+    card.appendChild(check);
+  }
   return card;
 }
 
@@ -367,10 +397,10 @@ function renderCalendarMonthList(year, month) {
 
   const monthReminders = allReminders.filter((r) => r.date.startsWith(monthPrefix));
   const upcoming = monthReminders
-    .filter((r) => r.date >= today)
+    .filter((r) => !isPast(r, today))
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   const past = monthReminders
-    .filter((r) => r.date < today && !isArchived(r))
+    .filter((r) => isPast(r, today) && !isArchived(r))
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
 
   calMonthList.innerHTML = "";
@@ -385,7 +415,7 @@ function renderCalendarMonthList(year, month) {
     label.className = "section-label";
     label.textContent = "PRÓXIMOS ESTE MES";
     calMonthList.appendChild(label);
-    for (const reminder of upcoming) calMonthList.appendChild(buildCard(reminder));
+    for (const reminder of upcoming) calMonthList.appendChild(buildCard(reminder, false, true));
   }
 
   if (past.length > 0) {
@@ -407,7 +437,7 @@ function openDaySheet(dateStr, reminders) {
     item.className = "day-sheet-item";
     item.innerHTML = `
       <div class="when">${hh} ${mer}</div>
-      <div class="title">${escapeHtml(reminder.title)}</div>
+      <div class="title">${isDone(reminder) ? "✓ " : ""}${escapeHtml(reminder.title)}</div>
       <button class="edit-icon" aria-label="Editar">✎</button>
     `;
     item.addEventListener("click", () => showForm("edit", reminder));
@@ -555,6 +585,22 @@ async function saveReminder() {
   showActiveTab();
 }
 
+async function setCompleted(id, completed) {
+  const res = await fetch(`${API}/${id}/${completed ? "complete" : "reopen"}`, { method: "POST" });
+  if (!res.ok) {
+    alert("No se pudo actualizar el recordatorio.");
+    return false;
+  }
+  showToast(completed ? "HECHO · MOVIDO A PASADOS" : "REABIERTO");
+  await refreshEverything();
+  return true;
+}
+
+async function toggleEditingCompleted() {
+  if (!editingId) return;
+  if (await setCompleted(editingId, !editingCompleted)) showActiveTab();
+}
+
 async function deleteReminder() {
   if (!editingId) return;
   if (!confirm("¿Eliminar este recordatorio y todas sus alertas?")) return;
@@ -579,6 +625,7 @@ inputDate.addEventListener("input", handleMainDateTimeChange);
 inputTime.addEventListener("input", handleMainDateTimeChange);
 btnSave.addEventListener("click", saveReminder);
 btnDelete.addEventListener("click", deleteReminder);
+btnComplete.addEventListener("click", toggleEditingCompleted);
 
 calPrev.addEventListener("click", () => {
   calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1);

@@ -23,5 +23,6 @@ export interface ReminderRecord {
   date: string;
   time: string;
   createdAt: string;
+  completedAt: string | null;
   alerts: AlertRecord[];
 }

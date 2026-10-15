@@ -575,3 +575,40 @@ body{
   text-transform:uppercase;
 }
 .btn-danger.hidden{display:none;}
+
+/* ---- completed reminders ---- */
+.reminder-card .tag.tag-done{
+  background:var(--ok);
+  color:#fff;
+}
+.reminder-card .card-check{
+  flex:0 0 auto;
+  width:56px;
+  border:0;
+  border-left:var(--border) solid var(--ink);
+  background:#fff;
+  color:var(--ink);
+  font-size:24px;
+  font-weight:900;
+}
+.reminder-card .card-check:active{
+  background:var(--ok);
+  color:#fff;
+}
+
+.btn-complete{
+  width:100%;
+  margin-top:12px;
+  background:#fff;
+  color:var(--ink);
+  border:3px solid var(--ink);
+  padding:14px;
+  font-size:14px;
+  font-weight:900;
+  text-transform:uppercase;
+}
+.btn-complete:active{
+  background:var(--ok);
+  color:#fff;
+}
+.btn-complete.hidden{display:none;}

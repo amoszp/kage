@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from "express";
-import { createReminder, deleteReminder, listReminders, updateReminder } from "./db";
+import { createReminder, deleteReminder, listReminders, setReminderCompleted, updateReminder } from "./db";
 import type { ReminderInput } from "./types";
 
 export const router = Router();
@@ -48,6 +48,17 @@ router.put("/reminders/:id", (req: Request, res: Response) => {
   }
   res.json(updated);
 });
+
+for (const [action, completed] of [["complete", true], ["reopen", false]] as const) {
+  router.post(`/reminders/:id/${action}`, (req: Request, res: Response) => {
+    const updated = setReminderCompleted(Number(req.params.id), completed);
+    if (!updated) {
+      res.status(404).json({ error: "reminder not found" });
+      return;
+    }
+    res.json(updated);
+  });
+}
 
 router.delete("/reminders/:id", (req: Request, res: Response) => {
   const id = Number(req.params.id);
