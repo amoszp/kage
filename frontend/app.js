@@ -198,7 +198,6 @@ function setListSubTab(subTab) {
 
 function updateArchiveToggleState() {
   btnToggleArchived.classList.toggle("active", showArchived);
-  btnToggleArchived.textContent = showArchived ? "📂" : "📁";
   btnToggleArchived.setAttribute("aria-label", showArchived ? "Ocultar archivados" : "Mostrar archivados");
 }
 

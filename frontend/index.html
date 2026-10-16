@@ -50,8 +50,12 @@
   <header class="bar bar-with-action">
     <h1>CALENDARIO</h1>
     <div class="bar-buttons">
-      <button id="btn-toggle-done" class="btn-icon-toggle" aria-label="Ocultar hechos">✓</button>
-      <button id="btn-account" class="btn-icon-toggle" aria-label="Cuenta">👤</button>
+      <button id="btn-toggle-done" class="btn-icon-toggle" aria-label="Ocultar hechos">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>
+      </button>
+      <button id="btn-account" class="btn-icon-toggle" aria-label="Cuenta">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21v-3.5q0-3.5 3.5-3.5h8q3.5 0 3.5 3.5V21"/></svg>
+      </button>
     </div>
   </header>
   <div class="cal-header">
@@ -70,7 +74,9 @@
 <main id="view-list" class="view hidden">
   <header class="bar bar-with-action">
     <h1>RECORDATORIOS</h1>
-    <button id="btn-toggle-archived" class="btn-icon-toggle hidden" aria-label="Mostrar archivados">📁</button>
+    <button id="btn-toggle-archived" class="btn-icon-toggle hidden" aria-label="Mostrar archivados">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="5"/><path d="M4.5 9v11h15V9M9.5 13h5"/></svg>
+    </button>
   </header>
   <div class="subtabbar">
     <button id="subtab-upcoming" class="subtab-btn active">PRÓXIMOS</button>
