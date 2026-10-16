@@ -50,6 +50,20 @@ Todas las rutas de `/api/reminders` piden sesión: la cookie que pone el login o
 | `POST` | `/api/reminders` | crea uno `{ title, date, time, alerts[] }` |
 | `PUT` / `DELETE` | `/api/reminders/:id` | edita / borra |
 | `POST` | `/api/reminders/:id/complete` · `/reopen` | marca hecho / reabre |
+| `POST` | `/api/siri/reminders` | para atajos de voz: `{ title, date: "AAAA-MM-DD", time: "HH:mm", alerts, confirm }`, ver abajo |
+
+### Atajos de voz (Siri)
+
+`POST /api/siri/reminders` con una clave de API. Las alertas se calculan en el servidor a partir de un nombre (`alerts`):
+
+| `alerts` | Avisos |
+|---|---|
+| `normal` (o vacío) | 3 días antes a las 10:00, 1 día antes a las 10:00 y 5 horas antes |
+| `a la hora` | a la hora del recordatorio |
+| `1 hora antes` | 1 hora antes |
+| `1 día antes` | 1 día antes, a la misma hora |
+
+Los avisos que ya hayan pasado se descartan; si no queda ninguno, se pone uno a la hora del recordatorio. Sin `confirm: true` no se guarda nada y la respuesta es `{ speak }`, la frase para leer al usuario ("…¿Lo guardo?"); con `confirm: true` se crea y responde `201`. Los errores responden `400` con `{ error, speak }`. Las horas son locales a `TZ` (en `backend/.env`).
 
 ## Producción sin Docker
 

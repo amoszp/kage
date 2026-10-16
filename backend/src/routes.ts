@@ -22,6 +22,7 @@ import {
   setReminderCompleted,
   updateReminder,
 } from "./db";
+import * as siri from "./siri";
 import type { ReminderInput } from "./types";
 
 export const router = Router();
@@ -192,4 +193,23 @@ for (const [action, completed] of [["complete", true], ["reopen", false]] as con
 router.delete("/reminders/:id", (req: Request, res: Response) => {
   deleteReminder(Number(req.params.id));
   res.status(204).send();
+});
+
+// ---------- Siri (iPhone Shortcuts, API key in Authorization: Bearer) ----------
+
+// Without `confirm: true` nothing is saved: the answer is the sentence to read
+// back. The shortcut asks the user, then sends the same request with confirm.
+router.post("/siri/reminders", (req: Request, res: Response) => {
+  const result = siri.plan(req.body);
+  if (!result.ok) {
+    res.status(400).json({ error: result.error, speak: result.speak });
+    return;
+  }
+  // Shortcuts may send the flag as a boolean or as text.
+  if (![true, "true", 1].includes(req.body?.confirm)) {
+    res.json({ speak: `${result.speak} ¿Lo guardo?` });
+    return;
+  }
+  const reminder = createReminder(result.input, req.user!.id);
+  res.status(201).json({ speak: "Guardado.", reminder });
 });
