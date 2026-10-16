@@ -50,6 +50,7 @@ Todas las rutas de `/api/reminders` piden sesión: la cookie que pone el login o
 | `POST` | `/api/reminders` | crea uno `{ title, date, time, alerts[] }` |
 | `PUT` / `DELETE` | `/api/reminders/:id` | edita / borra |
 | `POST` | `/api/reminders/:id/complete` · `/reopen` | marca hecho / reabre |
+| `GET` | `/api/siri/say` · `/api/siri/answer` | conversación de voz en texto plano, ver abajo |
 | `POST` | `/api/siri/reminders` | para atajos de voz: `{ title, date: "AAAA-MM-DD", time: "HH:mm", alerts, confirm }`, ver abajo |
 
 ### Atajos de voz (Siri)
@@ -64,6 +65,11 @@ Todas las rutas de `/api/reminders` piden sesión: la cookie que pone el login o
 | `1 día antes` | 1 día antes, a la misma hora |
 
 Los avisos que ya hayan pasado se descartan; si no queda ninguno, se pone uno a la hora del recordatorio. Sin `confirm: true` no se guarda nada y la respuesta es `{ speak }`, la frase para leer al usuario ("…¿Lo guardo?"); con `confirm: true` se crea y responde `201`. Los errores responden `400` con `{ error, speak }`. Las horas son locales a `TZ` (en `backend/.env`).
+
+**Conversación en texto plano** (para un atajo mínimo: solo direcciones web, sin cabeceras ni cuerpo). La clave va en `?key=` y cada respuesta es una frase en `text/plain`, también los errores (`401` con clave inválida).
+
+- `GET /api/siri/say?key=…&text=…` con la frase entera, p. ej. "dentista el viernes a las cinco de la tarde, una hora antes". Entiende hoy / mañana / pasado mañana, días de la semana, "el 23 (de noviembre)", "20/11", "a las 5 (y media) de la tarde", "17:30", "esta noche", y los avisos dichos ("una hora antes", "un día antes", "solo a la hora"; si no, `normal`). Las horas 1–6 sin "de la mañana" se toman por la tarde. Responde la frase a confirmar ("…¿Lo guardo?"), o pregunta lo que falta ("¿A qué hora?").
+- `GET /api/siri/answer?key=…&text=…` con la respuesta: "sí" guarda, "no" cancela; si faltaba el día o la hora, se completa y se guarda directamente. La pregunta abierta dura 10 minutos.
 
 ## Producción sin Docker
 

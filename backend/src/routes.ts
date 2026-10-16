@@ -12,6 +12,7 @@ import {
   setSessionCookie,
   signup,
   type User,
+  verify,
 } from "./auth";
 import {
   claimUnownedReminders,
@@ -23,6 +24,7 @@ import {
   updateReminder,
 } from "./db";
 import * as siri from "./siri";
+import * as voice from "./voice";
 import type { ReminderInput } from "./types";
 
 export const router = Router();
@@ -129,6 +131,36 @@ router.post(
     clearSessionCookie(res);
     res.status(204).send();
   })
+);
+
+// ---------- voice (minimal iPhone Shortcut: plain text in, plain text out) ----------
+// GET so the shortcut needs nothing but a web address; the API key comes as
+// ?key= and every answer is a sentence for Siri to read, errors included.
+
+function voiceRoute(handle: (user: User, text: string) => string) {
+  return wrap(async (req, res) => {
+    res.set("Cache-Control", "no-store").type("text/plain; charset=utf-8");
+    const key = typeof req.query.key === "string" ? req.query.key.trim() : "";
+    let user: User | null = null;
+    try {
+      user = key ? await verify(key) : null;
+    } catch (err) {
+      if (!(err instanceof AccountsUnavailable)) throw err;
+      res.status(503).send("Kage no puede comprobar tu clave ahora mismo. Prueba en un rato.");
+      return;
+    }
+    if (!user) {
+      res.status(401).send("No reconozco la clave de este atajo.");
+      return;
+    }
+    res.send(handle(user, voice.queryText(req.query.text)));
+  });
+}
+
+router.get("/siri/say", voiceRoute((user, text) => voice.say(user.id, text)));
+router.get(
+  "/siri/answer",
+  voiceRoute((user, text) => voice.answer(user.id, text, (input) => createReminder(input, user.id)))
 );
 
 router.use(requireUser(claimLegacy));
