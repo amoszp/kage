@@ -60,13 +60,29 @@ function labelFor(event: Date, fire: Date): string {
   return diffDays === -1 ? "1 día después" : `${-diffDays} días después`;
 }
 
-export function alertsFor(event: Date, preset: Preset, now: Date): AlertInput[] {
-  const times: Date[] = {
+/** Alerts said one by one: the normal set and/or so many minutes before (0 = at the time). */
+export interface AlertMix {
+  normal?: boolean;
+  before?: number[];
+}
+
+function presetTimes(event: Date, preset: Preset): Date[] {
+  return {
     normal: [daysBeforeAt(event, 3, 10, 0), daysBeforeAt(event, 1, 10, 0), new Date(event.getTime() - 5 * HOUR_MS)],
     hora: [event],
     "1h": [new Date(event.getTime() - HOUR_MS)],
     "1d": [new Date(event.getFullYear(), event.getMonth(), event.getDate() - 1, event.getHours(), event.getMinutes())],
   }[preset];
+}
+
+export function alertsFor(event: Date, spec: Preset | AlertMix, now: Date): AlertInput[] {
+  const times: Date[] =
+    typeof spec === "string"
+      ? presetTimes(event, spec)
+      : [
+          ...(spec.normal ? presetTimes(event, "normal") : []),
+          ...(spec.before ?? []).map((minutes) => new Date(event.getTime() - minutes * 60_000)),
+        ];
 
   // Alerts already in the past are dropped; if none is left, one at the event itself.
   const unique = [...new Map(times.filter((t) => t > now).map((t) => [t.getTime(), t])).values()].sort(
@@ -93,7 +109,9 @@ export function plan(body: any, now = new Date()): SiriResult {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{1,2}:\d{2}$/.test(time)) {
     return { ok: false, error: "date must be YYYY-MM-DD and time HH:mm", speak: "No he entendido la fecha o la hora." };
   }
-  const preset = presetFrom(body?.alerts);
+  const mix: AlertMix | null =
+    body?.alerts && typeof body.alerts === "object" && !Array.isArray(body.alerts) ? body.alerts : null;
+  const preset = mix ?? presetFrom(body?.alerts);
   if (!preset) return { ok: false, error: "unknown alerts preset", speak: "No conozco ese tipo de aviso." };
 
   const [y, m, d] = date.split("-").map(Number);

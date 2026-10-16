@@ -68,7 +68,7 @@ Los avisos que ya hayan pasado se descartan; si no queda ninguno, se pone uno a 
 
 **Conversación en texto plano** (para un atajo mínimo: solo direcciones web, sin cabeceras ni cuerpo). La clave va en `?key=` y cada respuesta es una frase en `text/plain`, también los errores (`401` con clave inválida).
 
-- `GET /api/siri/say?key=…&text=…` con la frase entera, p. ej. "dentista el viernes a las cinco de la tarde, una hora antes". Entiende hoy / mañana / pasado mañana, días de la semana, "el 23 (de noviembre)", "20/11", "a las 5 (y media) de la tarde", "17:30", "esta noche", y los avisos dichos ("una hora antes", "un día antes", "solo a la hora"; si no, `normal`). Las horas 1–6 sin "de la mañana" se toman por la tarde. Responde la frase a confirmar ("…¿Lo guardo?"), o pregunta lo que falta ("¿A qué hora?").
+- `GET /api/siri/say?key=…&text=…` con la frase entera, p. ej. "dentista el viernes a las cinco de la tarde, una hora antes". Entiende hoy / mañana / pasado mañana, días de la semana, "el 23 (de noviembre)", "20/11", "a las 5 (y media) de la tarde", "17:30", "esta noche", y los avisos dichos, tantos como se quiera ("un día antes y una hora antes", "30 minutos antes", "dos semanas antes", "media hora antes", "a la hora", "con avisos normales y …"); si no se dice ninguno, `normal`. Las horas 1–6 sin "de la mañana" se toman por la tarde. Responde la frase a confirmar ("…¿Lo guardo?"), o pregunta lo que falta ("¿A qué hora?").
 - `GET /api/siri/answer?key=…&text=…` con la respuesta: "sí" guarda, "no" cancela; si faltaba el día o la hora, se completa y se guarda directamente. La pregunta abierta dura 10 minutos.
 
 ## Producción sin Docker

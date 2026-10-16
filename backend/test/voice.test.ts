@@ -7,18 +7,35 @@ process.env.TZ = "Atlantic/Canary";
 const NOW = new Date(2026, 9, 16, 15, 0); // Fri 16 Oct 2026, 15:00
 
 const p = (text: string) => {
-  const { title, date, time, preset } = parseSpoken(text, NOW);
-  return { title, date, time, preset };
+  const { title, date, time, alerts } = parseSpoken(text, NOW);
+  return { title, date, time, alerts };
 };
 
 test("whole sentences as Siri writes them", () => {
-  assert.deepEqual(p("Dentista el viernes a las cinco de la tarde"), { title: "Dentista", date: "2026-10-23", time: "17:00", preset: "normal" });
-  assert.deepEqual(p("recuérdame llamar a mamá mañana a las 10"), { title: "Llamar a mamá", date: "2026-10-17", time: "10:00", preset: "normal" });
-  assert.deepEqual(p("Peluquería el martes 27 a las 17:30, una hora antes"), { title: "Peluquería", date: "2026-10-27", time: "17:30", preset: "1h" });
-  assert.deepEqual(p("ITV el 3 de noviembre a las 9 y media un día antes"), { title: "ITV", date: "2026-11-03", time: "09:30", preset: "1d" });
-  assert.deepEqual(p("Pádel pasado mañana a las 8 de la noche solo a la hora"), { title: "Pádel", date: "2026-10-18", time: "20:00", preset: "hora" });
-  assert.deepEqual(p("cena con Gianca esta noche"), { title: "Cena con Gianca", date: "2026-10-16", time: "21:00", preset: "normal" });
-  assert.deepEqual(p("Reunión el 20/11 a las 12"), { title: "Reunión", date: "2026-11-20", time: "12:00", preset: "normal" });
+  assert.deepEqual(p("Dentista el viernes a las cinco de la tarde"), { title: "Dentista", date: "2026-10-23", time: "17:00", alerts: { normal: true } });
+  assert.deepEqual(p("recuérdame llamar a mamá mañana a las 10"), { title: "Llamar a mamá", date: "2026-10-17", time: "10:00", alerts: { normal: true } });
+  assert.deepEqual(p("Peluquería el martes 27 a las 17:30, una hora antes"), { title: "Peluquería", date: "2026-10-27", time: "17:30", alerts: { normal: false, before: [60] } });
+  assert.deepEqual(p("ITV el 3 de noviembre a las 9 y media un día antes"), { title: "ITV", date: "2026-11-03", time: "09:30", alerts: { normal: false, before: [1440] } });
+  assert.deepEqual(p("Pádel pasado mañana a las 8 de la noche solo a la hora"), { title: "Pádel", date: "2026-10-18", time: "20:00", alerts: { normal: false, before: [0] } });
+  assert.deepEqual(p("cena con Gianca esta noche"), { title: "Cena con Gianca", date: "2026-10-16", time: "21:00", alerts: { normal: true } });
+  assert.deepEqual(p("Reunión el 20/11 a las 12"), { title: "Reunión", date: "2026-11-20", time: "12:00", alerts: { normal: true } });
+});
+
+test("several alerts in one sentence", () => {
+  assert.deepEqual(p("Dentista el viernes a las 5, un día antes y una hora antes"), {
+    title: "Dentista", date: "2026-10-23", time: "17:00", alerts: { normal: false, before: [1440, 60] },
+  });
+  assert.deepEqual(p("Vuelo el 3 de noviembre a las 9 y media con avisos normales y 30 minutos antes").alerts, { normal: true, before: [30] });
+  assert.deepEqual(p("Cita mañana a las 10 dos días antes, media hora antes y a la hora").alerts, { normal: false, before: [2880, 30, 0] });
+  assert.equal(p("Vuelo el 3 de noviembre a las 9 y media con avisos normales y 30 minutos antes").time, "09:30");
+});
+
+test("several alerts are read back and saved", () => {
+  const saved: ReminderInput[] = [];
+  const q = say(5, "Dentista el viernes a las 5, un día antes y una hora antes", NOW);
+  assert.match(q, /Avisos: 1 día antes a las 17:00, mismo día a las 16:00\. ¿Lo guardo\?$/);
+  answer(5, "sí", (i) => saved.push(i), NOW);
+  assert.equal(saved[0].alerts.length, 2);
 });
 
 test("bare hours 1-6 are the afternoon; a past time alone means tomorrow", () => {

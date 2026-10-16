@@ -1,4 +1,4 @@
-import { plan } from "./siri";
+import { plan, type AlertMix } from "./siri";
 import type { ReminderInput } from "./types";
 
 /**
@@ -19,13 +19,18 @@ const HOUR_WORDS: Record<string, number> = {
 const HOUR = `(\\d{1,2}|${Object.keys(HOUR_WORDS).join("|")})`;
 const PERIOD = "(de la manana|de la madrugada|de la tarde|de la noche|del mediodia|p ?m|a ?m)";
 
-type Preset = "normal" | "hora" | "1h" | "1d";
+const COUNT_WORDS: Record<string, number> = {
+  un: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
+  once: 11, doce: 12, quince: 15, veinte: 20, treinta: 30, cuarenta: 40, "cuarenta y cinco": 45,
+};
+const UNIT_MINUTES: Record<string, number> = { minuto: 1, hora: 60, dia: 1440, semana: 10080 };
 
 export interface Spoken {
   title: string;
   date: string | null; // YYYY-MM-DD
   time: string | null; // HH:mm
-  preset: Preset;
+  /** Alerts said in the sentence; none said means the normal set. */
+  alerts: AlertMix;
   /** The date wasn't said: it was worked out from the time alone. */
   dateGuessed: boolean;
 }
@@ -67,7 +72,7 @@ function dayOfMonth(today: Date, day: number, monthPart: string, yearPart: strin
 }
 
 /**
- * Pulls the date, time and alert preset out of a spoken sentence; what is
+ * Pulls the date, time and alerts out of a spoken sentence; what is
  * left is the title. Missing date or time come back as null.
  */
 export function parseSpoken(text: string, now: Date): Spoken {
@@ -84,16 +89,22 @@ export function parseSpoken(text: string, now: Date): Spoken {
     return m;
   };
 
-  // ---- alerts ----
-  let preset: Preset = "normal";
-  if (cut(/\b(?:con (?:un )?aviso )?(?:una|1) hora antes\b/)) preset = "1h";
-  else if (cut(/\b(?:con (?:un )?aviso )?(?:un|1) dia antes\b/)) preset = "1d";
-  else if (cut(/\b(?:solo |solamente )?(?:con aviso )?a la hora(?: exacta| justa| del evento)?\b/)) preset = "hora";
-  cut(/\b(?:con )?avisos? normal(?:es)?\b/);
+  // ---- alerts: as many as said, e.g. "un día antes y una hora antes" ----
+  const intro = "(?:(?:y|con) )?(?:(?:un |el |los )?avisos? (?:de )?)?";
+  const count = `(\\d{1,3}|${Object.keys(COUNT_WORDS).sort((a, b) => b.length - a.length).join("|")})`;
+  const before: number[] = [];
+  let normal = false;
+  let m: RegExpExecArray | null;
+  while ((m = cut(new RegExp(`\\b${intro}${count} (minuto|hora|dia|semana)s? antes\\b`)))) {
+    before.push((/^\d+$/.test(m[1]) ? Number(m[1]) : COUNT_WORDS[m[1]]) * UNIT_MINUTES[m[2]]);
+  }
+  while ((m = cut(new RegExp(`\\b${intro}(media hora|hora y media) antes\\b`)))) before.push(m[1] === "media hora" ? 30 : 90);
+  while (cut(new RegExp(`\\b${intro}(?:solo |solamente )?(?:a la hora|en el momento)(?: exacta| justa| del evento)?\\b`))) before.push(0);
+  if (cut(new RegExp(`\\b${intro}normal(?:es)?\\b`))) normal = true;
+  const alerts: AlertMix = before.length ? { normal, before } : { normal: true };
 
   // ---- time ----
   let time: [number, number] | null = null;
-  let m: RegExpExecArray | null;
   if ((m = cut(new RegExp(`\\b(?:a las|a la|sobre las|sobre la|para las|para la|hacia las)\\s+${HOUR}(?:[:h](\\d{2}))?(?:\\s*(?:h|horas))?(?:\\s+(y media|y cuarto|menos cuarto|en punto))?(?:\\s+${PERIOD})?\\b`)))) {
     let h = hourValue(m[1]);
     let min = m[2] ? Number(m[2]) : 0;
@@ -159,7 +170,7 @@ export function parseSpoken(text: string, now: Date): Spoken {
     title,
     date: date ? ymd(date) : null,
     time: time && time[0] < 24 && time[1] < 60 ? `${pad(time[0])}:${pad(time[1])}` : null,
-    preset,
+    alerts,
     dateGuessed,
   };
 }
@@ -191,7 +202,7 @@ function keep(userId: number, value: Pending): void {
 
 /** Checks the reminder and, if it's complete, asks to confirm it. */
 function preview(userId: number, spoken: Spoken, now: Date): string {
-  const result = plan({ title: spoken.title, date: spoken.date, time: spoken.time, alerts: spoken.preset }, now);
+  const result = plan({ title: spoken.title, date: spoken.date, time: spoken.time, alerts: spoken.alerts }, now);
   if (!result.ok) return result.speak;
   keep(userId, { kind: "confirm", input: result.input });
   return `${result.speak} ¿Lo guardo?`;
@@ -226,7 +237,7 @@ export function answer(userId: number, text: string, save: (input: ReminderInput
   const date = (!reply.dateGuessed && reply.date) || open.spoken.date || reply.date;
   const time = reply.time ?? open.spoken.time;
   if (!date || !time) return "No he entendido cuándo. No lo he guardado.";
-  const result = plan({ title: open.spoken.title, date, time, alerts: open.spoken.preset }, now);
+  const result = plan({ title: open.spoken.title, date, time, alerts: open.spoken.alerts }, now);
   if (!result.ok) return result.speak;
   save(result.input);
   return `Guardado: ${result.speak}`;
