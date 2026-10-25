@@ -1,4 +1,4 @@
-const CACHE_NAME = "kage-shell-v10";
+const CACHE_NAME = "kage-shell-v11";
 const SHELL_FILES = ["/", "/styles.css", "/app.js", "/manifest.webmanifest", "/icons/icon.svg", "/icons/icon-192.png"];
 
 self.addEventListener("install", (event) => {

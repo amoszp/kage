@@ -149,6 +149,13 @@ function formatCardTime(time) {
   return { hh: String(hh).padStart(2, "0") + ":" + String(m).padStart(2, "0"), mer };
 }
 
+/** "JUE 29": the event's day, for cards shown outside a day-grouped list. */
+function formatCardDate(dateStr) {
+  const d = new Date(dateStr + "T00:00:00");
+  const weekday = d.toLocaleDateString("es-ES", { weekday: "short" }).replace(".", "").toUpperCase();
+  return `${weekday} ${d.getDate()}`;
+}
+
 function formatDayLabel(dateStr) {
   const d = new Date(dateStr + "T00:00:00");
   return d
@@ -505,7 +512,7 @@ function renderList() {
   }
 }
 
-function buildCard(reminder, dimmed = false, withCheck = false) {
+function buildCard(reminder, dimmed = false, withCheck = false, withDate = false) {
   const card = document.createElement("div");
   card.className = dimmed ? "reminder-card dimmed" : "reminder-card";
   const { hh, mer } = formatCardTime(reminder.time);
@@ -516,7 +523,7 @@ function buildCard(reminder, dimmed = false, withCheck = false) {
     reminder.alerts.map((a) => `<span class="tag">${escapeHtml(a.label)}</span>`).join("");
 
   card.innerHTML = `
-    <div class="time">${hh}<small>${mer}</small></div>
+    <div class="time">${withDate ? `<span class="date">${formatCardDate(reminder.date)}</span>` : ""}${hh}<small>${mer}</small></div>
     <div class="body">
       <div class="title">${escapeHtml(reminder.title)}</div>
       <div class="tags">${alertTags}</div>
@@ -644,7 +651,7 @@ function renderCalendarMonthList(year, month) {
     label.className = "section-label";
     label.textContent = "PRÓXIMOS ESTE MES";
     calMonthList.appendChild(label);
-    for (const reminder of upcoming) calMonthList.appendChild(buildCard(reminder, false, true));
+    for (const reminder of upcoming) calMonthList.appendChild(buildCard(reminder, false, true, true));
   }
 
   if (past.length > 0) {
@@ -652,7 +659,7 @@ function renderCalendarMonthList(year, month) {
     label.className = "section-label";
     label.textContent = "PASADOS ESTE MES";
     calMonthList.appendChild(label);
-    for (const reminder of past) calMonthList.appendChild(buildCard(reminder, true));
+    for (const reminder of past) calMonthList.appendChild(buildCard(reminder, true, false, true));
   }
 }
 
