@@ -1,5 +1,7 @@
 import "dotenv/config";
 import express from "express";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { router } from "./routes";
 import { startScheduler } from "./scheduler";
@@ -25,6 +27,21 @@ app.use((_req, res, next) => {
 });
 app.use(express.json({ limit: "64kb" }));
 app.use("/api", router);
+// Cloudflare tells browsers to keep .js and .css for 4 hours whatever this
+// server says, so the page references them with a fingerprint of their
+// contents (app.js?v=<hash>): a new build is a new address, picked up at once.
+function versionedIndex(): string {
+  let html = readFileSync(join(FRONTEND_DIR, "index.html"), "utf8");
+  for (const name of ["styles.css", "app.js"]) {
+    const v = createHash("sha256").update(readFileSync(join(FRONTEND_DIR, name))).digest("hex").slice(0, 12);
+    html = html.replace(`"${name}"`, `"${name}?v=${v}"`);
+  }
+  return html;
+}
+const INDEX_HTML = versionedIndex();
+app.get(["/", "/index.html"], (_req, res) => {
+  res.set("Cache-Control", "no-cache").type("html").send(INDEX_HTML);
+});
 app.use(express.static(FRONTEND_DIR));
 
 app.listen(PORT, () => {
