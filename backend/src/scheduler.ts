@@ -1,6 +1,6 @@
 import { AccountsUnavailable, getUserDetails } from "./auth";
-import { listDueAlerts, markAlertSent, nextPendingAlert } from "./db";
-import { sendTelegramMessage } from "./telegram";
+import { addAlert, getReminder, listDueAlerts, markAlertSent, setReminderCompleted } from "./db";
+import { answerCallback, editTelegramMessage, sendTelegramMessage, startTelegramPolling, type CallbackQuery } from "./telegram";
 
 const LEGACY_OWNER = (process.env.LEGACY_OWNER_USERNAME ?? "").trim().toLowerCase();
 const DEFAULT_CHAT_ID = process.env.TELEGRAM_CHAT_ID || null;
@@ -15,40 +15,51 @@ async function chatFor(userId: number | null): Promise<string | null> {
   return user.username === LEGACY_OWNER ? DEFAULT_CHAT_ID : null;
 }
 
-const MONTHS_ES = [
-  "enero", "febrero", "marzo", "abril", "mayo", "junio",
-  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+const MONTHS_EN = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
 ];
 
 function formatDate(date: string): string {
   const [, month, day] = date.split("-").map(Number);
-  return `${day} de ${MONTHS_ES[month - 1]}`;
+  return `${day} ${MONTHS_EN[month - 1]}`;
 }
 
-function formatIsoDateTime(iso: string): { date: string; time: string } {
-  const d = new Date(iso);
-  const date = `${d.getDate()} de ${MONTHS_ES[d.getMonth()]}`;
-  const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-  return { date, time };
+function hhmm(d: Date): string {
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-function buildMessage(
-  title: string,
-  date: string,
-  time: string,
-  next: { date: string; time: string } | null
-): string {
-  const lines = [
-    "💥Chacho espabila:",
-    "",
-    `✨${title}`,
-    `📅${formatDate(date)}`,
-    `🕰️${time}`,
-  ];
-  if (next) {
-    lines.push("", "🟩Siguiente Aviso:", `📅${next.date}`, `🕰️${next.time}`);
+export function buildMessage(title: string, date: string, time: string): string {
+  return [`✨${title}`, `📅${formatDate(date)}`, `🕰️${time}`].join("\n");
+}
+
+export const BUTTONS = (reminderId: number) => [
+  { text: "✅ Completed", callback_data: `done:${reminderId}` },
+  { text: "🔁 Remind me tomorrow", callback_data: `tomorrow:${reminderId}` },
+];
+
+// A tap on one of the alert's buttons. Only the reminder owner's own chat can act on it.
+export async function handleTap(q: CallbackQuery): Promise<void> {
+  const match = /^(done|tomorrow):(\d+)$/.exec(q.data ?? "");
+  const msg = q.message;
+  if (!match || !msg) return answerCallback(q.id);
+  const reminder = getReminder(Number(match[2]));
+  if (!reminder || String(msg.chat.id) !== (await chatFor(reminder.userId))) {
+    return answerCallback(q.id, "This reminder no longer exists.");
   }
-  return lines.join("\n");
+  const original = msg.text ?? buildMessage(reminder.title, reminder.date, reminder.time);
+  if (match[1] === "done") {
+    setReminderCompleted(reminder.id, true);
+    await editTelegramMessage(msg.chat.id, msg.message_id, `${original}\n\n✅ Completed`);
+    return answerCallback(q.id, "Completed");
+  }
+  // Same clock time as this alert went out, one day later.
+  const fireAt = new Date(msg.date * 1000);
+  fireAt.setSeconds(0, 0);
+  fireAt.setDate(fireAt.getDate() + 1);
+  addAlert(reminder.id, { label: "Recordar mañana", fireAt: fireAt.toISOString() });
+  await editTelegramMessage(msg.chat.id, msg.message_id, `${original}\n\n🔁 I'll remind you tomorrow at ${hhmm(fireAt)}`);
+  return answerCallback(q.id, `Tomorrow at ${hhmm(fireAt)}`);
 }
 
 export function startScheduler(): void {
@@ -70,6 +81,7 @@ export function startScheduler(): void {
   }, intervalSeconds * 1000);
 
   console.log(`[scheduler] checking for due alerts every ${intervalSeconds}s`);
+  startTelegramPolling((q) => handleTap(q));
 }
 
 async function runRound(): Promise<void> {
@@ -88,10 +100,8 @@ async function runRound(): Promise<void> {
       }
       throw err;
     }
-    const next = nextPendingAlert(alert.reminderId, alert.id);
-    const nextWhen = next ? formatIsoDateTime(next.fireAt) : null;
-    const message = buildMessage(alert.reminderTitle, alert.reminderDate, alert.reminderTime, nextWhen);
-    if (chatId) await sendTelegramMessage(message, chatId);
+    const message = buildMessage(alert.reminderTitle, alert.reminderDate, alert.reminderTime);
+    if (chatId) await sendTelegramMessage(message, chatId, BUTTONS(alert.reminderId));
     else console.warn(`[scheduler] no Telegram chat for user ${alert.reminderUserId}, alert ${alert.id} skipped`);
     markAlertSent(alert.id, new Date().toISOString());
   }

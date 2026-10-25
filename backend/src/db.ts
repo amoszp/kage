@@ -92,6 +92,10 @@ function insertAlerts(reminderId: number, alerts: AlertInput[]): void {
   }
 }
 
+export function addAlert(reminderId: number, alert: AlertInput): void {
+  insertAlerts(reminderId, [alert]);
+}
+
 export function createReminder(input: ReminderInput, userId: number): ReminderRecord {
   const createdAt = new Date().toISOString();
   const result = db
